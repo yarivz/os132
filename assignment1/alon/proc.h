@@ -1,5 +1,10 @@
 // Segments in proc->gdt.
 #define NSEGS     7
+#define QUANTA 5
+#define _RR 1
+#define _FRR 2
+#define _GRT 3
+#define _3Q 4
 
 // Per-CPU state
 struct cpu {
@@ -71,6 +76,7 @@ struct proc {
   int ctime;			//Creation time
   int etime;			//End time
   int rtime;			//Running time
+  int quanta;			//Quantum time
 };
 
 // Process memory is laid out contiguously, low addresses first:

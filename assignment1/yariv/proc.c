@@ -276,7 +276,7 @@ wait2(int *wtime, int *rtime)
         continue;
       havekids = 1;
       if(p->state == ZOMBIE){
-	*rtime = proc->rtime;
+	*rtime = p->rtime;
 	*wtime = p->etime - p->ctime - p->rtime;
 	// Found one.
         pid = p->pid;
@@ -351,20 +351,10 @@ scheduler(void)
       // to release ptable.lock and then reacquire it
       // before jumping back to us.
       proc = p;
-      //int time = 0;
-      acquire(&tickslock);
-      int startTime = ticks;
-      release(&tickslock);
-      
       switchuvm(p);
       p->state = RUNNING;
       swtch(&cpu->scheduler, proc->context);
       switchkvm();
-      
-      acquire(&tickslock);
-      int endTime = ticks;
-      release(&tickslock);
-      p->rtime = p->rtime + (endTime-startTime);
       // Process is done running for now.
       // It should have changed its p->state before coming back.
       proc = 0;

@@ -150,6 +150,7 @@ cgaputc(int c)
     if(pos%80 > 0) --pos;
   }
   else if(c == KEY_RT){
+    printint(pos,10,0);
     if(pos%80 < 79) ++pos;
   }
   else
@@ -180,13 +181,13 @@ consputc(int c)
 
   if(c == BACKSPACE){
     uartputc('\b'); uartputc(' '); uartputc('\b');
-  }
+  }/*
  else if (c == KEY_LF){
     uartputc(0x602);
   }
   else if (c == KEY_RT){
     uartputc(0x601);
-  }
+  }*/
   else
     uartputc(c);
   cgaputc(c);
@@ -267,7 +268,7 @@ consoleintr(int (*getc)(void))
       }
       break;
     case KEY_LF: //LEFT KEY
-     if(input.e % INPUT_BUF > 0)
+     if(input.e % INPUT_BUF > 0 && input.e+input.a>0)
       {
         input.a--;
         consputc(KEY_LF);

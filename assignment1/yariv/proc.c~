@@ -169,6 +169,17 @@ fork(void)
   np->ctime = ticks;
   release(&tickslock);
   np->rtime = 0;
+  switch(SCHEDFLAG)
+  {
+    case _FRR:
+      np->qvalue = np->ctime;
+      break;
+    case _GRT:
+      np->qvalue = 0;
+      break;
+    case _3Q:
+      break;
+  }
   return pid;
 }
 
@@ -336,41 +347,83 @@ void
 scheduler(void)
 {
   struct proc *p;
-
+  struct proc *t;
+  uint min = 0;
+  
   for(;;){
     // Enable interrupts on this processor.
     sti();
-
+    
+    acquire(&ptable.lock); 
+     
     // Loop over process table looking for process to run.
-    acquire(&ptable.lock);
-    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->state != RUNNABLE)
-        continue;
-
+    for(t = ptable.proc; t < &ptable.proc[NPROC]; t++)
+    {
+      if(t->state != RUNNABLE)
+	continue;
+      else
+      {
+	switch(SCHEDFLAG)
+	{
+	  default:
+	    p = t;
+	    proc = p;
+	    switchuvm(p);
+	    p->state = RUNNING;
+	    p->quanta = QUANTA;
+	    swtch(&cpu->scheduler, proc->context);
+	    switchkvm();
+	    // Process is done running for now.
+	    // It should have changed its p->state before coming back.
+	    proc = 0;
+	    break;
+	  case _FRR:
+	    if(!min)
+	    {
+	      min = t->qvalue;
+	      p = t;
+	    }
+	    else if(t->qvalue<min)
+	    {
+	      min = t->qvalue;
+	      p = t;
+	    }
+	    break;
+	  case _GRT:
+	    if(!min)
+	    {
+	      min = t->qvalue;
+	      p = t;
+	    }
+	    else if(t->qvalue<min)
+	    {
+	      min = t->qvalue;
+	      p = t;
+	    }
+	    break;
+	  case _3Q:
+	    break;
+	}
+      }
+    }
+  
+    if(SCHEDFLAG != _RR)
+    {
       // Switch to chosen process.  It is the process's job
       // to release ptable.lock and then reacquire it
       // before jumping back to us.
       proc = p;
-    /*  acquire(&tickslock);
-      int time = ticks;
-      release(&tickslock);
-      */
       switchuvm(p);
       p->state = RUNNING;
+      p->quanta = QUANTA;
       swtch(&cpu->scheduler, proc->context);
       switchkvm();
-      
-     /* acquire(&tickslock);
-      time = ticks - time;
-      release(&tickslock);
-      p->rtime += time; */
       // Process is done running for now.
       // It should have changed its p->state before coming back.
       proc = 0;
     }
     release(&ptable.lock);
-
-  }
+    }
 }
 
 // Enter scheduler.  Must hold only ptable.lock
@@ -401,6 +454,22 @@ yield(void)
   proc->state = RUNNABLE;
   sched();
   release(&ptable.lock);
+  switch(SCHEDFLAG)
+  {
+    case _FRR:
+      acquire(&tickslock);
+      proc->qvalue = ticks;
+      release(&tickslock);
+      break;
+    case _GRT:
+      acquire(&tickslock);
+      if(proc->ctime!=ticks)
+	proc->qvalue = proc->rtime/(ticks-proc->ctime);
+      release(&tickslock);
+      break;
+    case _3Q:
+      break;
+  }
 }
 
 // A fork child's very first scheduling by scheduler()

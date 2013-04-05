@@ -1,10 +1,10 @@
 // Segments in proc->gdt.
 #define NSEGS     7
 #define QUANTA 5
-#define SCHED_RR 1
-#define SCHED_FRR 2
-#define SCHED_GRT 3
-#define SCHED_3Q 4
+#define _RR 1
+#define _FRR 2
+#define _GRT 3
+#define _3Q 4
 
 // Per-CPU state
 struct cpu {

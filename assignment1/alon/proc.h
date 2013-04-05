@@ -77,6 +77,8 @@ struct proc {
   int etime;			//End time
   int rtime;			//Running time
   int quanta;			//Quantum time
+  int q;			//which queue is the proc in
+  uint qvalue;			//proc location
 };
 
 // Process memory is laid out contiguously, low addresses first:

@@ -30,8 +30,8 @@ sys_wait2(void)
 {
   char *rtime=0;
   char *wtime=0;
-  argptr(0,&rtime,sizeof(rtime));
-  argptr(1,&wtime,sizeof(wtime));
+  argptr(1,&rtime,sizeof(rtime));
+  argptr(0,&wtime,sizeof(wtime));
   return wait2((int*)wtime, (int*)rtime);
 }
 

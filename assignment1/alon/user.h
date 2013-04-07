@@ -5,6 +5,7 @@ int fork(void);
 int exit(void) __attribute__((noreturn));
 int wait(void);
 int wait2(int *wtime, int *rtime);
+int nice(void);
 int pipe(int*);
 int write(int, void*, int);
 int read(int, void*, int);

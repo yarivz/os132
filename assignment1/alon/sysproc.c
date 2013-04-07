@@ -36,6 +36,11 @@ sys_wait2(void)
 }
 
 int
+sys_nice(void)
+{
+  return nice();
+}
+int
 sys_kill(void)
 {
   int pid;

@@ -13,7 +13,8 @@
 #define SYS_sbrk   12
 #define SYS_sleep  13
 #define SYS_uptime 14
-#define SYS_wait2  22 
+#define SYS_wait2  22
+#define SYS_nice   23
 
 #define SYS_open   15
 #define SYS_write  16

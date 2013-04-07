@@ -5,6 +5,9 @@
 #define _FRR 2
 #define _GRT 3
 #define _3Q 4
+#define HIGH 3
+#define MEDIUM 2
+#define LOW 1
 
 // Per-CPU state
 struct cpu {
@@ -77,7 +80,7 @@ struct proc {
   int etime;			//End time
   int rtime;			//Running time
   int quanta;			//Quantum time
-  int q;			//which queue is the proc in
+  int priority;			//which queue is the proc in
   uint qvalue;			//proc location
 };
 

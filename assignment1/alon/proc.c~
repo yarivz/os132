@@ -19,21 +19,12 @@ extern void forkret(void);
 extern void trapret(void);
 
 static void wakeup1(void *chan);
-
 void
 pinit(void)
 {
   initlock(&ptable.lock, "ptable");
 }
-/*
-static struct proc getProc(void){
-  return ptable.proc;
-}
 
-static struct spinlock getSpinlock(void){
-  return ptable.lock;
-}
-*/
 //PAGEBREAK: 32
 // Look in the process table for an UNUSED proc.
 // If found, change state to EMBRYO and initialize
@@ -106,7 +97,6 @@ userinit(void)
 
   safestrcpy(p->name, "initcode", sizeof(p->name));
   p->cwd = namei("/");
-
   p->state = RUNNABLE;
 }
 
@@ -178,6 +168,8 @@ fork(void)
       np->qvalue = 0;
       break;
     case _3Q:
+      np->priority = HIGH;
+      np->qvalue = 0;
       break;
   }
   return pid;
@@ -191,7 +183,7 @@ exit(void)
 {
   struct proc *p;
   int fd;
-
+  
   if(proc == initproc)
     panic("init exiting");
 
@@ -219,8 +211,8 @@ exit(void)
         wakeup1(initproc);
     }
   }
-
   // Jump into the scheduler, never to return.
+  proc->priority = -1;
   acquire(&tickslock);
   proc->etime = ticks;
   release(&tickslock);
@@ -347,80 +339,135 @@ void
 scheduler(void)
 {
   struct proc *p;
+  struct proc *medium;
+  struct proc *high;
+  struct proc *head = 0;
   struct proc *t;
-  uint min = 0;
+  
   
   for(;;){
     // Enable interrupts on this processor.
     sti();
-    
+    int highflag = 0;
+    int mediumflag = 0;
+    int lowflag = 0;
+    uint frr_min = 0;
+    uint grt_min = 0;
+    if(head)
+      t = ++head;
     acquire(&ptable.lock); 
-     
+    t = ptable.proc;
     // Loop over process table looking for process to run.
-    for(t = ptable.proc; t < &ptable.proc[NPROC]; t++)
+    //for(t = ptable.proc; t < &ptable.proc[NPROC]; t++)
+    int i=0;
+    for(; i<NPROC; i++)
     {
+      if(t >= &ptable.proc[NPROC])
+	t = ptable.proc;
       if(t->state != RUNNABLE)
-	continue;
-      else
       {
-	switch(SCHEDFLAG)
-	{
-	  default:
-	    p = t;
-	    proc = p;
-	    switchuvm(p);
-	    p->state = RUNNING;
-	    p->quanta = QUANTA;
-	    swtch(&cpu->scheduler, proc->context);
-	    switchkvm();
-	    // Process is done running for now.
-	    // It should have changed its p->state before coming back.
-	    proc = 0;
-	    break;
-	  case _FRR:
-	    if(!min)
-	    {
-	      min = t->qvalue;
-	      p = t;
-	    }
-	    else if(t->qvalue<min)
-	    {
-	      min = t->qvalue;
-	      p = t;
-	    }
-	    break;
-	  case _GRT:
-	    if(!min)
-	    {
-	      min = t->qvalue;
-	      p = t;
-	    }
-	    else if(t->qvalue<min)
-	    {
-	      min = t->qvalue;
-	      p = t;
-	    }
-	    break;
-	  case _3Q:
-	    break;
-	}
+	t++;
+	continue;
       }
+      switch(SCHEDFLAG)
+      {
+	default:
+	  p = t;
+	  proc = p;
+	  switchuvm(p);
+	  p->state = RUNNING;
+	  p->quanta = QUANTA;
+	  swtch(&cpu->scheduler, proc->context);
+	  switchkvm();
+	  // Process is done running for now.
+	  // It should have changed its p->state before coming back.
+	  proc = 0;
+	  break;
+	case _FRR:
+FRR:	  t->quanta = QUANTA;
+	  if(!frr_min)
+	  {
+	    frr_min = t->qvalue;
+	    medium = t;
+	  }
+	  else if(t->qvalue < frr_min)
+	  {
+	    frr_min = t->qvalue;
+	    medium = t;
+	  }
+	  break;
+	case _GRT:
+GRT:	  acquire(&tickslock);
+	  if(t->ctime!=ticks)
+	  {
+	    t->qvalue = t->rtime/(ticks-t->ctime);
+	  }
+	  release(&tickslock);
+	  if(!grt_min)
+	  {
+	    grt_min = t->qvalue;
+	    high = t;
+	  }
+	  else if(t->qvalue < grt_min)
+	  {
+	    grt_min = t->qvalue;
+	    high = t;
+	  }
+	  break;
+	case _3Q:
+	  if(t->priority == HIGH || t->priority == 0)
+	  {
+	    highflag = 1;
+	    goto GRT;
+	  }
+	  else if(t->priority == MEDIUM)
+	  {
+	    mediumflag = 1;
+	    goto FRR;
+	  }
+	  else if(!lowflag && t->priority == LOW)	// low - no proc has been choosen yet
+	  {
+	    head=t;
+	    lowflag = 1;
+	    t->quanta = QUANTA;
+	  }
+	  break;
+      }
+      t++;
     }
-  
     if(SCHEDFLAG != _RR)
     {
+      if(SCHEDFLAG == _FRR)
+	p = medium;
+      else if(SCHEDFLAG == _GRT)
+	p = high;
+      else
+      {
+	if(highflag && high)
+	  p = high;
+	else if(mediumflag && medium)
+	  p = medium;
+	else if(head)
+	  if(head->state == RUNNABLE)
+	    p = head;
+      }     
+
       // Switch to chosen process.  It is the process's job
       // to release ptable.lock and then reacquire it
       // before jumping back to us.
-      proc = p;
-      switchuvm(p);
-      p->state = RUNNING;
-      p->quanta = QUANTA;
-      swtch(&cpu->scheduler, proc->context);
-      switchkvm();
-      // Process is done running for now.
-      // It should have changed its p->state before coming back.
+      if(p)
+	if(p->state == RUNNABLE)
+      { 
+
+	proc = p;
+	switchuvm(p);
+	p->state = RUNNING;
+	swtch(&cpu->scheduler, proc->context);
+	switchkvm();
+	// Process is done running for now.
+	// It should have changed its p->state before coming back.
       proc = 0;
+      }
     }
     release(&ptable.lock);
     }
@@ -456,18 +503,16 @@ yield(void)
   release(&ptable.lock);
   switch(SCHEDFLAG)
   {
-    case _FRR:
+    case _FRR:     
       acquire(&tickslock);
       proc->qvalue = ticks;
       release(&tickslock);
       break;
     case _GRT:
-      acquire(&tickslock);
-      if(proc->ctime!=ticks)
-	proc->qvalue = proc->rtime/(ticks-proc->ctime);
-      release(&tickslock);
+      proc->quanta = 0;
       break;
     case _3Q:
+      proc->quanta = 0;
       break;
   }
 }
@@ -609,6 +654,20 @@ procdump(void)
     }
     cprintf("\n");
   }
+}
+
+int
+nice(void)
+{
+  if(proc)
+  {
+    if(proc->priority>1)
+    {
+      proc->priority--;
+      return 0;
+    }
+  }
+  return -1;
 }
 
 

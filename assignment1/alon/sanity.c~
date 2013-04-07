@@ -18,7 +18,7 @@ void
 foo(int cid)
 {
   int i;
- /* switch(cid%3)
+  switch(cid%3)
   {
     case 0:
       nice();
@@ -27,8 +27,8 @@ foo(int cid)
       nice();
       nice();
       break;
-  }*/
-  for (i=0;i<50;i++)
+  }
+  for (i=0;i<500;i++)
      printf(1, "child %d prints for the %d time\n",cid,i+1);
 }
 

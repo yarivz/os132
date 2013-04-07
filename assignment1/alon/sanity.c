@@ -28,7 +28,7 @@ foo(int cid)
       nice();
       break;
   }
-  for (i=0;i<50;i++)
+  for (i=0;i<500;i++)
      printf(1, "child %d prints for the %d time\n",cid,i+1);
 }
 

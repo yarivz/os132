@@ -22,7 +22,6 @@ struct {
   uint w;  // Write index
   uint e;  // Edit index
   uint a; // Arrow index
-  uint size;
 } input;
 
 static void consputc(int);
@@ -269,7 +268,7 @@ consoleintr(int (*getc)(void))
       }
       break;
     case KEY_LF: //LEFT KEY
-     if(c != 0 && input.e - input.a > input.w && input.size > 0)
+     if(c != 0 && input.e - input.a > input.w)
       {
         consputc(KEY_LF);
 	input.a++;
@@ -286,7 +285,7 @@ consoleintr(int (*getc)(void))
       if(c != 0 && input.e-input.r < INPUT_BUF)
       {
 	c = (c == '\r') ? '\n' : c;
-	if(c != '\n' && input.a > 0 && c != C('D') && input.e != input.r+INPUT_BUF)
+	if(c != '\n' && input.a > 0)
 	{
 	    uint k = input.a;
 	    shiftRightBuf((input.e) % INPUT_BUF,k);
@@ -301,12 +300,10 @@ consoleintr(int (*getc)(void))
 	      consputc(KEY_LF);
 	
 	    input.e++;
-	    input.size++;
 	}
 	else {
 	  input.buf[input.e++ % INPUT_BUF] = c;
           consputc(c);
-	  input.size++;
 	}
 	
 	if(c == '\n' || c == C('D') || input.e == input.r+INPUT_BUF)
@@ -314,7 +311,6 @@ consoleintr(int (*getc)(void))
 	  input.w = input.e;
           wakeup(&input.r);
 	  input.a = 0;
-	  input.size = 0;
         }
       }
       break;

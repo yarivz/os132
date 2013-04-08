@@ -21,7 +21,8 @@ struct {
   uint r;  // Read index
   uint w;  // Write index
   uint e;  // Edit index
-  int a; // Arrow index
+  uint a; // Arrow index
+  uint size;
 } input;
 
 static void consputc(int);
@@ -208,20 +209,20 @@ consputc(int c)
 #define C(x)  ((x)-'@')  // Control-x
 
 void
-shiftRightBuf(int e, int k)
+shiftRightBuf(uint e, uint k)
 {
-  int j=0;
+  uint j=0;
   for(;j < k;e--,j++){
     input.buf[e] = input.buf[e-1];
   }
 }
 
 void
-shiftLeftBuf(int e, int k)
+shiftLeftBuf(uint e, uint k)
 {
-  int i = e+k;
-  int j=0;
-  for(;j < (-1)*k ;i++,j++){
+  uint i = e-k;
+  uint j=0;
+  for(;j < k ;i++,j++){
     input.buf[i] = input.buf[i+1];
   }
   input.buf[e] = ' ';
@@ -247,15 +248,15 @@ consoleintr(int (*getc)(void))
       break;
     case C('H'): case '\x7f':  // Backspace
       if(input.e != input.w){
-	if(input.a<0)
+	if(input.a > 0)
 	{
 	    shiftLeftBuf((input.e-1) % INPUT_BUF,input.a);
-	    int i = input.e+input.a-1;
+	    uint i = input.e-input.a-1;
 	    consputc(KEY_LF);
 	    for(;i<input.e;i++){
 	      consputc(input.buf[i%INPUT_BUF]);
 	    }
-	    i = input.e+input.a;
+	    i = input.e-input.a;
 	    for(;i<input.e+1;i++){
 	      consputc(KEY_LF);
 	    }
@@ -268,30 +269,30 @@ consoleintr(int (*getc)(void))
       }
       break;
     case KEY_LF: //LEFT KEY
-     if(input.e + input.a > input.w)
+     if(c != 0 && input.e - input.a > input.w && input.size > 0)
       {
         consputc(KEY_LF);
-	input.a--;
+	input.a++;
       }
       break;
     case KEY_RT: //RIGHT KEY
-      if(input.a < 0 /*&& input.e % INPUT_BUF < INPUT_BUF-1*/)
+      if(c != 0 && input.a > 0 && input.e % INPUT_BUF < INPUT_BUF-1)
       {
         consputc(KEY_RT);
-	input.a++;
+	input.a--;
       }
       break;
     default:
       if(c != 0 && input.e-input.r < INPUT_BUF)
       {
 	c = (c == '\r') ? '\n' : c;
-	if(c != '\n' && input.a < 0)
+	if(c != '\n' && input.a > 0 && c != C('D') && input.e != input.r+INPUT_BUF)
 	{
-	    int k = (-1)*input.a;
+	    uint k = input.a;
 	    shiftRightBuf((input.e) % INPUT_BUF,k);
 	    input.buf[(input.e-k) % INPUT_BUF] = c;
 	    
-	    int i = input.e-k;
+	    uint i = input.e-k;
 	    for(;i<input.e+1;i++)
 	      consputc(input.buf[i%INPUT_BUF]);
 	    
@@ -300,16 +301,20 @@ consoleintr(int (*getc)(void))
 	      consputc(KEY_LF);
 	
 	    input.e++;
+	    input.size++;
 	}
 	else {
 	  input.buf[input.e++ % INPUT_BUF] = c;
           consputc(c);
+	  input.size++;
 	}
+	
 	if(c == '\n' || c == C('D') || input.e == input.r+INPUT_BUF)
 	{
-          input.a = 0;
 	  input.w = input.e;
           wakeup(&input.r);
+	  input.a = 0;
+	  input.size = 0;
         }
       }
       break;

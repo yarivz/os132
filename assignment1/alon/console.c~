@@ -268,7 +268,7 @@ consoleintr(int (*getc)(void))
       }
       break;
     case KEY_LF: //LEFT KEY
-     if(input.e+input.a> input.w)
+     if(input.e + input.a > input.w)
       {
         consputc(KEY_LF);
 	input.a--;

@@ -342,25 +342,35 @@ scheduler(void)
   struct proc *medium;
   struct proc *high;
   struct proc *head = 0;
-  struct proc *t;
+  struct proc *t = ptable.proc;
+  int currentime;
+  int highflag;
+  int mediumflag;
+  int lowflag;
+  uint frr_min;
+  uint grt_min;
   
   
   for(;;){
     // Enable interrupts on this processor.
     sti();
-    int highflag = 0;
-    int mediumflag = 0;
-    int lowflag = 0;
-    uint frr_min = 0;
-    uint grt_min = 0;
-    if(head)
+    highflag = 0;
+    mediumflag = 0;
+    lowflag = 0;
+    frr_min = 0;
+    grt_min = 0;
+    
+    if(head && p==head)
       t = ++head;
-    acquire(&ptable.lock); 
-    t = ptable.proc;
-    // Loop over process table looking for process to run.
-    //for(t = ptable.proc; t < &ptable.proc[NPROC]; t++)
+    else if(head)
+      t = head;
+    
+    acquire(&tickslock);
+    currentime = ticks;
+    release(&tickslock);  
     int i=0;
-    for(; i<NPROC; i++)
+    acquire(&ptable.lock); 
+    for(; i<NPROC; i++)			// Loop over process table looking for process to run.
     {
       if(t >= &ptable.proc[NPROC])
 	t = ptable.proc;
@@ -397,12 +407,8 @@ FRR:	  t->quanta = QUANTA;
 	  }
 	  break;
 	case _GRT:
-GRT:	  acquire(&tickslock);
-	  if(t->ctime!=ticks)
-	  {
-	    t->qvalue = t->rtime/(ticks-t->ctime);
-	  }
-	  release(&tickslock);
+GRT:	  if(t->ctime!=currentime)
+	    t->qvalue = t->rtime/(currentime-t->ctime);
 	  if(!grt_min)
 	  {
 	    grt_min = t->qvalue;
@@ -448,17 +454,14 @@ GRT:	  acquire(&tickslock);
 	else if(mediumflag && medium)
 	  p = medium;
 	else if(head)
-	  if(head->state == RUNNABLE)
 	    p = head;
       }     
 
       // Switch to chosen process.  It is the process's job
       // to release ptable.lock and then reacquire it
       // before jumping back to us.
-      if(p)
-	if(p->state == RUNNABLE)
-      { 
-
+      if(p && p->state == RUNNABLE)
+      {
 	proc = p;
 	switchuvm(p);
 	p->state = RUNNING;
@@ -466,7 +469,7 @@ GRT:	  acquire(&tickslock);
 	switchkvm();
 	// Process is done running for now.
 	// It should have changed its p->state before coming back.
-      proc = 0;
+	proc = 0;
       }
     }
     release(&ptable.lock);
@@ -497,10 +500,6 @@ sched(void)
 void
 yield(void)
 {
-  acquire(&ptable.lock);  //DOC: yieldlock
-  proc->state = RUNNABLE;
-  sched();
-  release(&ptable.lock);
   switch(SCHEDFLAG)
   {
     case _FRR:     
@@ -511,8 +510,19 @@ yield(void)
     case _GRT:
       break;
     case _3Q:
+      if(proc->priority == MEDIUM)
+      {
+	acquire(&tickslock);
+	proc->qvalue = ticks;
+	release(&tickslock);
+      }
       break;
   }
+  acquire(&ptable.lock);  //DOC: yieldlock
+  proc->state = RUNNABLE;
+  sched();
+  release(&ptable.lock);
+  
 }
 
 // A fork child's very first scheduling by scheduler()
@@ -582,7 +592,9 @@ wakeup1(void *chan)
 
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
     if(p->state == SLEEPING && p->chan == chan)
+    {
       p->state = RUNNABLE;
+    }
 }
 
 // Wake up all processes sleeping on chan.
@@ -659,11 +671,18 @@ nice(void)
 {
   if(proc)
   {
-    if(proc->priority>1)
+    if(proc->priority == HIGH)
+    {
+      proc->priority--;
+      proc->qvalue = proc->ctime;
+      return 0;
+    }
+    else if(proc->priority == MEDIUM)
     {
       proc->priority--;
       return 0;
     }
+    
   }
   return -1;
 }

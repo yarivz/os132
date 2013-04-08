@@ -14,6 +14,16 @@
 #include "proc.h"
 #include "x86.h"
 
+#define INPUT_BUF 128
+struct {
+  struct spinlock lock;
+  char buf[INPUT_BUF];
+  uint r;  // Read index
+  uint w;  // Write index
+  uint e;  // Edit index
+  int a; // Arrow index
+} input;
+
 static void consputc(int);
 
 static int panicked = 0;
@@ -147,10 +157,10 @@ cgaputc(int c)
     if(pos > 0) --pos;
   }
   else if(c == KEY_LF){
-    if(pos%80 > 0) --pos;
+    --pos;
   }
   else if(c == KEY_RT){
-    if(pos%80 < 79) ++pos;
+    ++pos;
   }
   else
     crt[pos++] = (c&0xff) | 0x0700;  // black on white
@@ -192,15 +202,7 @@ consputc(int c)
   cgaputc(c);
 }
 
-#define INPUT_BUF 128
-struct {
-  struct spinlock lock;
-  char buf[INPUT_BUF];
-  uint r;  // Read index
-  uint w;  // Write index
-  uint e;  // Edit index
-  int a; // Arrow index
-} input;
+
 
 
 #define C(x)  ((x)-'@')  // Control-x
@@ -208,10 +210,9 @@ struct {
 void
 shiftRightBuf(int e, int k)
 {
-  int i = e+1;
   int j=0;
-  for(;j < k ;i--,j++){
-    input.buf[i] = input.buf[i-1];
+  for(;j < k;e--,j++){
+    input.buf[e] = input.buf[e-1];
   }
 }
 
@@ -252,7 +253,7 @@ consoleintr(int (*getc)(void))
 	    int i = input.e+input.a-1;
 	    consputc(KEY_LF);
 	    for(;i<input.e;i++){
-	      consputc(input.buf[i]);
+	      consputc(input.buf[i%INPUT_BUF]);
 	    }
 	    i = input.e+input.a;
 	    for(;i<input.e+1;i++){
@@ -267,17 +268,17 @@ consoleintr(int (*getc)(void))
       }
       break;
     case KEY_LF: //LEFT KEY
-     if(input.e % INPUT_BUF > 0 && input.e+input.a>0)
+     if(input.e + input.a > input.w)
       {
-        input.a--;
         consputc(KEY_LF);
+	input.a--;
       }
       break;
     case KEY_RT: //RIGHT KEY
-      if(input.a < 0 && input.e % INPUT_BUF < INPUT_BUF-1)
+      if(input.a < 0 /*&& input.e % INPUT_BUF < INPUT_BUF-1*/)
       {
-        input.a++;
         consputc(KEY_RT);
+	input.a++;
       }
       break;
     default:
@@ -286,26 +287,26 @@ consoleintr(int (*getc)(void))
 	c = (c == '\r') ? '\n' : c;
 	if(c != '\n' && input.a < 0)
 	{
-	    int j = (INPUT_BUF-(input.e-input.w));
-	    int k = ((-1)*input.a > j) ? j : (-1)*input.a;
-	    shiftRightBuf((input.e-1) % INPUT_BUF,k);
+	    int k = (-1)*input.a;
+	    shiftRightBuf((input.e) % INPUT_BUF,k);
 	    input.buf[(input.e-k) % INPUT_BUF] = c;
-	    int i = input.e-k;
 	    
-	    for(;i<input.e+1;i++){
-	      consputc(input.buf[i]);
-	    }
+	    int i = input.e-k;
+	    for(;i<input.e+1;i++)
+	      consputc(input.buf[i%INPUT_BUF]);
+	    
 	    i = input.e-k;
-	    for(;i<input.e;i++){
+	    for(;i<input.e;i++)
 	      consputc(KEY_LF);
-	    }
+	
 	    input.e++;
 	}
 	else {
 	  input.buf[input.e++ % INPUT_BUF] = c;
           consputc(c);
 	}
-        if(c == '\n' || c == C('D') || input.e == input.r+INPUT_BUF){
+	if(c == '\n' || c == C('D') || input.e == input.r+INPUT_BUF)
+	{
           input.a = 0;
 	  input.w = input.e;
           wakeup(&input.r);

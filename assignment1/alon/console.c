@@ -275,7 +275,7 @@ consoleintr(int (*getc)(void))
       }
       break;
     case KEY_RT: //RIGHT KEY
-      if(input.a < 0 && input.e % INPUT_BUF < INPUT_BUF-1)
+      if(input.a < 0 /*&& input.e % INPUT_BUF < INPUT_BUF-1*/)
       {
         consputc(KEY_RT);
 	input.a++;

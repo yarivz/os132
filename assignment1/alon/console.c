@@ -208,10 +208,9 @@ struct {
 void
 shiftRightBuf(int e, int k)
 {
-  int i = e+1;
   int j=0;
-  for(;j < k && e+j < INPUT_BUF;i--,j++){
-    input.buf[i] = input.buf[i-1];
+  for(;j < k;e--,j++){
+    input.buf[e] = input.buf[e-1];
   }
 }
 
@@ -287,24 +286,25 @@ consoleintr(int (*getc)(void))
 	if(c != '\n' && input.a < 0)
 	{
 	    int k = (-1)*input.a;
-	    shiftRightBuf((input.e-1) % INPUT_BUF,k);
+	    shiftRightBuf((input.e) % INPUT_BUF,k);
 	    input.buf[(input.e-k) % INPUT_BUF] = c;
-	    int i = input.e-k;
 	    
-	    for(;i<input.e+1;i++){
+	    int i = input.e-k;
+	    for(;i<input.e+1;i++)
 	      consputc(input.buf[i%INPUT_BUF]);
-	    }
+	    
 	    i = input.e-k;
-	    for(;i<input.e;i++){
+	    for(;i<input.e;i++)
 	      consputc(KEY_LF);
-	    }
+	
 	    input.e++;
 	}
 	else {
 	  input.buf[input.e++ % INPUT_BUF] = c;
           consputc(c);
 	}
-	if(c == '\n' || c == C('D') || input.e == input.r+INPUT_BUF){
+	if(c == '\n' || c == C('D') || input.e == input.r+INPUT_BUF)
+	{
           input.a = 0;
 	  input.w = input.e;
           wakeup(&input.r);

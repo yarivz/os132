@@ -22,7 +22,6 @@ struct {
   uint w;  // Write index
   uint e;  // Edit index
   uint a; // Arrow index
-  uint size;
 } input;
 
 static void consputc(int);
@@ -157,10 +156,11 @@ cgaputc(int c)
   else if(c == BACKSPACE){
     if(pos > 0) --pos;
   }
-  else if(c == KEY_LF){
-    --pos;
+  else if(c == KEY_LF){		// decreasing pos in a left key is pressed
+    if(pos > 0)
+      --pos;
   }
-  else if(c == KEY_RT){
+  else if(c == KEY_RT){		// decreasing pos in a right key is pressed
     ++pos;
   }
   else
@@ -209,8 +209,8 @@ consputc(int c)
 #define C(x)  ((x)-'@')  // Control-x
 
 void
-shiftRightBuf(uint e, uint k)
-{
+shiftRightBuf(uint e, uint k)			// a function for shifting our buffer one step to the right from the place we're not inserting
+{						// k is our left we are in our line and e hold the end of line
   uint j=0;
   for(;j < k;e--,j++){
     input.buf[e] = input.buf[e-1];
@@ -218,7 +218,7 @@ shiftRightBuf(uint e, uint k)
 }
 
 void
-shiftLeftBuf(uint e, uint k)
+shiftLeftBuf(uint e, uint k)			// a function for shifting our buffer one step to the left from the place we're not backspacing
 {
   uint i = e-k;
   uint j=0;
@@ -269,7 +269,7 @@ consoleintr(int (*getc)(void))
       }
       break;
     case KEY_LF: //LEFT KEY
-     if(c != 0 && input.e - input.a > input.w && input.size > 0)
+     if(c != 0 && input.e - input.a > input.w)
       {
         consputc(KEY_LF);
 	input.a++;
@@ -286,7 +286,7 @@ consoleintr(int (*getc)(void))
       if(c != 0 && input.e-input.r < INPUT_BUF)
       {
 	c = (c == '\r') ? '\n' : c;
-	if(c != '\n' && input.a > 0 && c != C('D') && input.e != input.r+INPUT_BUF)
+	if(c != '\n' && input.a > 0)
 	{
 	    uint k = input.a;
 	    shiftRightBuf((input.e) % INPUT_BUF,k);
@@ -301,12 +301,10 @@ consoleintr(int (*getc)(void))
 	      consputc(KEY_LF);
 	
 	    input.e++;
-	    input.size++;
 	}
 	else {
 	  input.buf[input.e++ % INPUT_BUF] = c;
           consputc(c);
-	  input.size++;
 	}
 	
 	if(c == '\n' || c == C('D') || input.e == input.r+INPUT_BUF)
@@ -314,7 +312,6 @@ consoleintr(int (*getc)(void))
 	  input.w = input.e;
           wakeup(&input.r);
 	  input.a = 0;
-	  input.size = 0;
         }
       }
       break;

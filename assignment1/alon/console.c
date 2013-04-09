@@ -156,10 +156,11 @@ cgaputc(int c)
   else if(c == BACKSPACE){
     if(pos > 0) --pos;
   }
-  else if(c == KEY_LF){
-    --pos;
+  else if(c == KEY_LF){		// decreasing pos in a left key is pressed
+    if(pos > 0)
+      --pos;
   }
-  else if(c == KEY_RT){
+  else if(c == KEY_RT){		// decreasing pos in a right key is pressed
     ++pos;
   }
   else
@@ -208,8 +209,8 @@ consputc(int c)
 #define C(x)  ((x)-'@')  // Control-x
 
 void
-shiftRightBuf(uint e, uint k)
-{
+shiftRightBuf(uint e, uint k)			// a function for shifting our buffer one step to the right from the place we're not inserting
+{						// k is our left we are in our line and e hold the end of line
   uint j=0;
   for(;j < k;e--,j++){
     input.buf[e] = input.buf[e-1];
@@ -217,8 +218,8 @@ shiftRightBuf(uint e, uint k)
 }
 
 void
-shiftLeftBuf(uint e, uint k)
-{
+shiftLeftBuf(uint e, uint k)			// a function for shifting our buffer one step to the left from the place we're not backspacing
+{						// k is our left we are in our line and e hold the end of line
   uint i = e-k;
   uint j=0;
   for(;j < k ;i++,j++){

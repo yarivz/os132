@@ -408,7 +408,9 @@ FRR:	  t->quanta = QUANTA;
 	  break;
 	case _GRT:
 GRT:	  if(t->ctime!=currentime)
-	    t->qvalue = t->rtime/(currentime-t->ctime);
+	    t->qvalue = (t->rtime*1000)/(currentime-t->ctime);
+	  //if(t->pid>2)
+	    //cprintf("proc id = %d, qvalue = %d\n",t->pid,t->qvalue);  
 	  if(!grt_min)
 	  {
 	    grt_min = t->qvalue;

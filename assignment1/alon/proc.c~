@@ -156,19 +156,19 @@ fork(void)
   np->state = RUNNABLE;
   safestrcpy(np->name, proc->name, sizeof(proc->name));
   acquire(&tickslock);
-  np->ctime = ticks;
+  np->ctime = ticks;			// set creation time 
   release(&tickslock);
-  np->rtime = 0;
+  np->rtime = 0;			// init running time
   switch(SCHEDFLAG)
   {
     case _FRR:
-      np->qvalue = np->ctime;
+      np->qvalue = np->ctime;		// to mainteen fifo round robin the init value for a process is his creation time
       break;
     case _GRT:
       np->qvalue = 0;
       break;
     case _3Q:
-      np->priority = HIGH;
+      np->priority = HIGH;		// upon creation, process's priority is HIGH
       np->qvalue = 0;
       break;
   }
@@ -212,9 +212,9 @@ exit(void)
     }
   }
   // Jump into the scheduler, never to return.
-  proc->priority = -1;
+  proc->priority = -1;				// clean process priority
   acquire(&tickslock);
-  proc->etime = ticks;
+  proc->etime = ticks;				// set the current ticks as the process end time
   release(&tickslock);
   proc->state = ZOMBIE;
   sched();
@@ -279,8 +279,8 @@ wait2(int *wtime, int *rtime)
         continue;
       havekids = 1;
       if(p->state == ZOMBIE){
-	*rtime = p->rtime;
-	*wtime = p->etime - p->ctime - p->rtime;
+	*rtime = p->rtime;				// sets rtime & wtime, the running and waiting pointers
+	*wtime = p->etime - p->ctime - p->rtime;	// rtime is the current process runtime and etime is the time the process waited since his 								// creation
 	// Found one.
         pid = p->pid;
         kfree(p->kstack);
@@ -408,7 +408,7 @@ FRR:	  t->quanta = QUANTA;
 	  break;
 	case _GRT:
 GRT:	  if(t->ctime!=currentime)
-	    t->qvalue = (t->rtime*1000)/(currentime-t->ctime);
+	    t->qvalue = t->rtime/(currentime-t->ctime);
 	  //if(t->pid>2)
 	    //cprintf("proc id = %d, qvalue = %d\n",t->pid,t->qvalue);  
 	  if(!grt_min)

@@ -219,7 +219,7 @@ shiftRightBuf(uint e, uint k)			// a function for shifting our buffer one step t
 
 void
 shiftLeftBuf(uint e, uint k)			// a function for shifting our buffer one step to the left from the place we're not backspacing
-{
+{						// k is our left we are in our line and e hold the end of line
   uint i = e-k;
   uint j=0;
   for(;j < k ;i++,j++){
@@ -248,52 +248,52 @@ consoleintr(int (*getc)(void))
       break;
     case C('H'): case '\x7f':  // Backspace
       if(input.e != input.w){
-	if(input.a > 0)
+	if(input.a > 0)			// Checking if backspace was pressed not at the end marker
 	{
-	    shiftLeftBuf((input.e-1) % INPUT_BUF,input.a);
+	    shiftLeftBuf((input.e-1) % INPUT_BUF,input.a);	// shift our buffer one step to the left and print backspace
 	    uint i = input.e-input.a-1;
-	    consputc(KEY_LF);
-	    for(;i<input.e;i++){
-	      consputc(input.buf[i%INPUT_BUF]);
-	    }
+	    consputc(KEY_LF);					// move the screen marker one step to the left
+	    for(;i<input.e;i++){ 
+	      consputc(input.buf[i%INPUT_BUF]);		// print to the screen all the characters that were on the right hand side of where we
+	    }							// we entred backspace
 	    i = input.e-input.a;
-	    for(;i<input.e+1;i++){
+	    for(;i<input.e+1;i++){				// move the line marker back to were it was before pressing backspace
 	      consputc(KEY_LF);
 	    }
 	}
 	else
 	{
-	  consputc(BACKSPACE);
+	  consputc(BACKSPACE);		// if not, we'll pring backspace to the screen
 	}
 	input.e--;
       }
       break;
     case KEY_LF: //LEFT KEY
-     if(c != 0 && input.e - input.a > input.w)
+     if(c != 0 && input.e - input.a > input.w)		// if there is still room to move left
       {
-        consputc(KEY_LF);
-	input.a++;
+        consputc(KEY_LF);				// move our marker one step to the left
+	input.a++;					// increament our left steps counter
       }
       break;
     case KEY_RT: //RIGHT KEY
-      if(c != 0 && input.a > 0 && input.e % INPUT_BUF < INPUT_BUF-1)
-      {
-        consputc(KEY_RT);
-	input.a--;
+      if(c != 0 && input.a > 0 && input.e % INPUT_BUF < INPUT_BUF-1) // if we're not at the end of the line and we've moved to the left before
+      {	
+        consputc(KEY_RT);				// move our marker one step to the right
+	input.a--;					// decreament our left steps counter				
       }
       break;
     default:
       if(c != 0 && input.e-input.r < INPUT_BUF)
       {
 	c = (c == '\r') ? '\n' : c;
-	if(c != '\n' && input.a > 0)
+	if(c != '\n' && input.a > 0)			// checking if we have moved left from the end of the line
 	{
 	    uint k = input.a;
-	    shiftRightBuf((input.e) % INPUT_BUF,k);
-	    input.buf[(input.e-k) % INPUT_BUF] = c;
+	    shiftRightBuf((input.e) % INPUT_BUF,k);	// shift our buffer one step to the write
+	    input.buf[(input.e-k) % INPUT_BUF] = c;	// write to the buffer the inserted letter
 	    
 	    uint i = input.e-k;
-	    for(;i<input.e+1;i++)
+	    for(;i<input.e+1;i++)			// print to the screen all the characters on the right hand side of the inserted character
 	      consputc(input.buf[i%INPUT_BUF]);
 	    
 	    i = input.e-k;

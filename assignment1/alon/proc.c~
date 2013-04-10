@@ -341,7 +341,7 @@ scheduler(void)
   struct proc *p;
   struct proc *medium;
   struct proc *high;
-  struct proc *head = 0;
+  struct proc *head = 0;		// a pointer for the last low priority that was found.
   struct proc *t = ptable.proc;
   int currentime;
   int highflag;
@@ -354,26 +354,26 @@ scheduler(void)
   for(;;){
     // Enable interrupts on this processor.
     sti();
-    highflag = 0;
-    mediumflag = 0;
-    lowflag = 0;
-    frr_min = 0;
+    highflag = 0;			// Indicates wheater a high priority process was found
+    mediumflag = 0;			// Indicates wheater a medium priority process was found
+    lowflag = 0;			// Indicates wheater a low priority process was found
+    frr_min = 0;			
     grt_min = 0;
     
-    if(head && p==head)
-      t = ++head;
-    else if(head)
-      t = head;
+    if(head && p==head)			// if the process that was ran in the last iteration was a low priority process we're gonna 		
+      t = ++head;			// start our next iteration from the process after it the ptable
+    else if(head)			// for the init case where head = null
+      t = head;				// head will now point for the ptable first process
     
     acquire(&tickslock);
-    currentime = ticks;
-    release(&tickslock);  
+    currentime = ticks;			// get ticks before each iteration so that every process in the grt case we'll be calculated 
+    release(&tickslock);  		// according to the same tick count
     int i=0;
     acquire(&ptable.lock); 
     for(; i<NPROC; i++)			// Loop over process table looking for process to run.
     {
-      if(t >= &ptable.proc[NPROC])
-	t = ptable.proc;
+      if(t >= &ptable.proc[NPROC])	// if our t iteator pointer passed the last process address in the ptable we'll
+	t = ptable.proc;		// reset t to point to the first process
       if(t->state != RUNNABLE)
       {
 	t++;
@@ -381,7 +381,7 @@ scheduler(void)
       }
       switch(SCHEDFLAG)
       {
-	default:
+	default:			// the deafult RR case stayed as it was
 	  p = t;
 	  proc = p;
 	  switchuvm(p);
@@ -394,21 +394,21 @@ scheduler(void)
 	  proc = 0;
 	  break;
 	case _FRR:
-FRR:	  t->quanta = QUANTA;
-	  if(!frr_min)
+FRR:	  t->quanta = QUANTA;			// give the process a quanta for his executing
+	  if(!frr_min)				// we init frr_min=0 at each iteration
 	  {
 	    frr_min = t->qvalue;
 	    medium = t;
 	  }
-	  else if(t->qvalue < frr_min)
+	  else if(t->qvalue < frr_min)		// find min queue value
 	  {
 	    frr_min = t->qvalue;
-	    medium = t;
+	    medium = t;				// medium we'll be the process that we execute if no high priority process is found
 	  }
 	  break;
 	case _GRT:
 GRT:	  if(t->ctime!=currentime)
-	    t->qvalue = t->rtime/(currentime-t->ctime);
+	    t->qvalue = t->rtime/(currentime-t->ctime);	// calculate the process queue value according to the ratio given
 	  //if(t->pid>2)
 	    //cprintf("proc id = %d, qvalue = %d\n",t->pid,t->qvalue);  
 	  if(!grt_min)
@@ -416,36 +416,36 @@ GRT:	  if(t->ctime!=currentime)
 	    grt_min = t->qvalue;
 	    high = t;
 	  }
-	  else if(t->qvalue < grt_min)
+	  else if(t->qvalue < grt_min)				// find min queue value
 	  {
 	    grt_min = t->qvalue;
 	    high = t;
 	  }
 	  break;
 	case _3Q:
-	  if(t->priority == HIGH || t->priority == 0)
-	  {
+	  if(t->priority == HIGH || t->priority == 0)		// mark that we found a high priority process. priority=0 is for the init process and
+	  {							// jump to the GRT case
 	    highflag = 1;
 	    goto GRT;
 	  }
-	  else if(t->priority == MEDIUM)
+	  else if(t->priority == MEDIUM)			// mark that we found a medium priority process and jump to the FRR case
 	  {
 	    mediumflag = 1;
 	    goto FRR;
 	  }
-	  else if(!lowflag && t->priority == LOW)	// low - no proc has been choosen yet
+	  else if(!lowflag && t->priority == LOW)		// mark that we found a low priority process
 	  {
-	    head=t;
+	    head=t;						// head will now point to the low priority process that was found
 	    lowflag = 1;
-	    t->quanta = QUANTA;
+	    t->quanta = QUANTA;					// give the process quanta for his executing
 	  }
 	  break;
       }
       t++;
     }
-    if(SCHEDFLAG != _RR)
+    if(SCHEDFLAG != _RR)					// if we're not in the deafult case
     {
-      if(SCHEDFLAG == _FRR)
+      if(SCHEDFLAG == _FRR)					// choose the process to be executed according to the highest priority that was found
 	p = medium;
       else if(SCHEDFLAG == _GRT)
 	p = high;

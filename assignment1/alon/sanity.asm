@@ -37,12 +37,12 @@ foo(int cid)
   2f:	74 09                	je     3a <foo+0x3a>
   31:	eb 12                	jmp    45 <foo+0x45>
   {
-    case 0:
+    case 0:		// Medium priority
       nice();
   33:	e8 44 08 00 00       	call   87c <nice>
       break;
   38:	eb 0b                	jmp    45 <foo+0x45>
-    case 1:
+    case 1:		// Low priority
       nice();
   3a:	e8 3d 08 00 00       	call   87c <nice>
       nice();
@@ -63,7 +63,7 @@ foo(int cid)
   66:	00 
   67:	c7 04 24 01 00 00 00 	movl   $0x1,(%esp)
   6e:	e8 7e 09 00 00       	call   9f1 <printf>
-    case 1:
+    case 1:		// Low priority
       nice();
       nice();
       break;
@@ -152,7 +152,7 @@ sanity(void)
  10c:	c7 45 cc 00 00 00 00 	movl   $0x0,-0x34(%ebp)
  113:	eb 3a                	jmp    14f <sanity+0xc9>
     {
-      if(pid[cid] == temp)
+      if(pid[cid] == temp)		// find the cid that matches the pid that returned from wait2
  115:	8b 45 cc             	mov    -0x34(%ebp),%eax
  118:	8b 84 85 58 fe ff ff 	mov    -0x1a8(%ebp,%eax,4),%eax
  11f:	3b 45 c8             	cmp    -0x38(%ebp),%eax

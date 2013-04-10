@@ -53,8 +53,8 @@ struct backcmd {
 int fork1(void);  // Fork but panics on failure.
 void panic(char*);
 struct cmd *parsecmd(char*);
-char **PATH;
-int pathInit;
+char **PATH;	//global variable that holds the PATH
+int pathInit;	//PATH initialized flag
 
 
 int
@@ -416,17 +416,17 @@ runcmd(struct cmd *cmd)
     if(ecmd->argv[0] == 0)
       exit();
     exec(ecmd->argv[0], ecmd->argv);
-    if(pathInit)
+    if(pathInit)			//if PATH was set
     {
-      char *b = ecmd->argv[0];
+      char *b = ecmd->argv[0];		
       int i=0, x=strlen(b);
       char** temp2 = PATH;
-      for(;i<10 && *(PATH[i]);i++){
+      for(;i<10 && *(PATH[i]);i++){	//iterate over each path in PATH
 	int z = strlen(*temp2);
 	char *a = temp2[i];
 	char dest[x+z];
-	strcat(dest,a,b);
-	exec(dest,ecmd->argv);
+	strcat(dest,a,b);		//concatenate path before the command
+	exec(dest,ecmd->argv);		//try to execute the command from the selected path
       }
     }
     printf(2, "exec %s failed\n", ecmd->argv[0]);
@@ -507,23 +507,23 @@ main(void)
         printf(2, "cannot cd %s\n", buf+3);
       continue;
     }
-    if(!strncmp(buf,"export PATH",11)){
+    if(!strncmp(buf,"export PATH",11)){		//if export PATH was called
       //buf = buf+12;
-      PATH = malloc(10*sizeof(char*));
-      memset(PATH, 0, 10*sizeof(char*));
+      PATH = malloc(10*sizeof(char*));		//allocate memory for the PATH variable
+      memset(PATH, 0, 10*sizeof(char*));	//clean alocated memory - 10 paths max
       int i;
       for(i=0;i<10;i++){
-	PATH[i] = malloc(100);
-	memset(PATH[i],0,100);
+	PATH[i] = malloc(100);			//allocate memory for each path in PATH - 100 chars max
+	memset(PATH[i],0,100);			//clean allocated memory
       }
-      pathInit = 1;
+      pathInit = 1;				//set flag to 1 - initialized
       int tempIndex = 0;
       int* beginIndex = &tempIndex;
-      int length = strlen(&(buf[12]));
+      int length = strlen(&(buf[12]));		//set the starting point to parse after "export PATH"
       char** temp = PATH;
-      while(*beginIndex<length-1)
+      while(*beginIndex<length-1)		//go over the command string and tokenize by delimiter
       {
-	if(strtok(*temp,&(buf[12]),':',beginIndex))
+	if(strtok(*temp,&(buf[12]),':',beginIndex)) //if tokenizer returned a string
 	{
 	(temp)++;
 	}

@@ -20,10 +20,10 @@ foo(int cid)
   int i;
   switch(cid%3)
   {
-    case 0:
+    case 0:		// Medium priority
       nice();
       break;
-    case 1:
+    case 1:		// Low priority
       nice();
       nice();
       break;
@@ -69,7 +69,7 @@ sanity(void)
     temp = wait2(&tempwtime,&temprtime);
     for(cid=0;cid<30 && !found;cid++)
     {
-      if(pid[cid] == temp)
+      if(pid[cid] == temp)		// find the cid that matches the pid that returned from wait2
       {
 	 wTime[cid] = tempwtime;
 	 rTime[cid] = temprtime;

@@ -5,7 +5,7 @@ _sh:     file format elf32-i386
 Disassembly of section .text:
 
 00000000 <getcmd>:
-int pathInit;
+int pathInit;	//PATH initialized flag
 
 
 int
@@ -1269,12 +1269,12 @@ runcmd(struct cmd *cmd)
      a51:	89 54 24 04          	mov    %edx,0x4(%esp)
      a55:	89 04 24             	mov    %eax,(%esp)
      a58:	e8 07 09 00 00       	call   1364 <exec>
-    if(pathInit)
+    if(pathInit)			//if PATH was set
      a5d:	a1 14 1f 00 00       	mov    0x1f14,%eax
      a62:	85 c0                	test   %eax,%eax
      a64:	0f 84 dd 00 00 00    	je     b47 <runcmd+0x148>
     {
-      char *b = ecmd->argv[0];
+      char *b = ecmd->argv[0];		
      a6a:	8b 45 f0             	mov    -0x10(%ebp),%eax
      a6d:	8b 40 04             	mov    0x4(%eax),%eax
      a70:	89 45 ec             	mov    %eax,-0x14(%ebp)
@@ -1287,7 +1287,7 @@ runcmd(struct cmd *cmd)
       char** temp2 = PATH;
      a88:	a1 10 1f 00 00       	mov    0x1f10,%eax
      a8d:	89 45 e4             	mov    %eax,-0x1c(%ebp)
-      for(;i<10 && *(PATH[i]);i++){
+      for(;i<10 && *(PATH[i]);i++){	//iterate over each path in PATH
      a90:	e9 92 00 00 00       	jmp    b27 <runcmd+0x128>
      a95:	89 e0                	mov    %esp,%eax
      a97:	89 c3                	mov    %eax,%ebx
@@ -1321,7 +1321,7 @@ runcmd(struct cmd *cmd)
      ae9:	8d 44 24 0c          	lea    0xc(%esp),%eax
      aed:	83 c0 00             	add    $0x0,%eax
      af0:	89 45 d4             	mov    %eax,-0x2c(%ebp)
-	strcat(dest,a,b);
+	strcat(dest,a,b);		//concatenate path before the command
      af3:	8b 45 d4             	mov    -0x2c(%ebp),%eax
      af6:	8b 55 ec             	mov    -0x14(%ebp),%edx
      af9:	89 54 24 08          	mov    %edx,0x8(%esp)
@@ -1329,7 +1329,7 @@ runcmd(struct cmd *cmd)
      b00:	89 54 24 04          	mov    %edx,0x4(%esp)
      b04:	89 04 24             	mov    %eax,(%esp)
      b07:	e8 c4 07 00 00       	call   12d0 <strcat>
-	exec(dest,ecmd->argv);
+	exec(dest,ecmd->argv);		//try to execute the command from the selected path
      b0c:	8b 45 f0             	mov    -0x10(%ebp),%eax
      b0f:	8d 50 04             	lea    0x4(%eax),%edx
      b12:	8b 45 d4             	mov    -0x2c(%ebp),%eax
@@ -1337,12 +1337,12 @@ runcmd(struct cmd *cmd)
      b19:	89 04 24             	mov    %eax,(%esp)
      b1c:	e8 43 08 00 00       	call   1364 <exec>
      b21:	89 dc                	mov    %ebx,%esp
-    if(pathInit)
+    if(pathInit)			//if PATH was set
     {
-      char *b = ecmd->argv[0];
+      char *b = ecmd->argv[0];		
       int i=0, x=strlen(b);
       char** temp2 = PATH;
-      for(;i<10 && *(PATH[i]);i++){
+      for(;i<10 && *(PATH[i]);i++){	//iterate over each path in PATH
      b23:	83 45 f4 01          	addl   $0x1,-0xc(%ebp)
      b27:	83 7d f4 09          	cmpl   $0x9,-0xc(%ebp)
      b2b:	7f 1a                	jg     b47 <runcmd+0x148>
@@ -1355,8 +1355,8 @@ runcmd(struct cmd *cmd)
      b3f:	84 c0                	test   %al,%al
      b41:	0f 85 4e ff ff ff    	jne    a95 <runcmd+0x96>
 	char dest[x+z];
-	strcat(dest,a,b);
-	exec(dest,ecmd->argv);
+	strcat(dest,a,b);		//concatenate path before the command
+	exec(dest,ecmd->argv);		//try to execute the command from the selected path
       }
     }
     printf(2, "exec %s failed\n", ecmd->argv[0]);
@@ -1612,7 +1612,7 @@ main(void)
       continue;
      da3:	e9 48 01 00 00       	jmp    ef0 <main+0x1fd>
     }
-    if(!strncmp(buf,"export PATH",11)){
+    if(!strncmp(buf,"export PATH",11)){		//if export PATH was called
      da8:	c7 44 24 08 0b 00 00 	movl   $0xb,0x8(%esp)
      daf:	00 
      db0:	c7 44 24 04 6e 19 00 	movl   $0x196e,0x4(%esp)
@@ -1622,11 +1622,11 @@ main(void)
      dc4:	85 c0                	test   %eax,%eax
      dc6:	0f 85 00 01 00 00    	jne    ecc <main+0x1d9>
       //buf = buf+12;
-      PATH = malloc(10*sizeof(char*));
+      PATH = malloc(10*sizeof(char*));		//allocate memory for the PATH variable
      dcc:	c7 04 24 28 00 00 00 	movl   $0x28,(%esp)
      dd3:	e8 c1 09 00 00       	call   1799 <malloc>
      dd8:	a3 10 1f 00 00       	mov    %eax,0x1f10
-      memset(PATH, 0, 10*sizeof(char*));
+      memset(PATH, 0, 10*sizeof(char*));	//clean alocated memory - 10 paths max
      ddd:	a1 10 1f 00 00       	mov    0x1f10,%eax
      de2:	c7 44 24 08 28 00 00 	movl   $0x28,0x8(%esp)
      de9:	00 
@@ -1639,7 +1639,7 @@ main(void)
      dfa:	c7 44 24 2c 00 00 00 	movl   $0x0,0x2c(%esp)
      e01:	00 
      e02:	eb 4a                	jmp    e4e <main+0x15b>
-	PATH[i] = malloc(100);
+	PATH[i] = malloc(100);			//allocate memory for each path in PATH - 100 chars max
      e04:	a1 10 1f 00 00       	mov    0x1f10,%eax
      e09:	8b 54 24 2c          	mov    0x2c(%esp),%edx
      e0d:	c1 e2 02             	shl    $0x2,%edx
@@ -1647,7 +1647,7 @@ main(void)
      e13:	c7 04 24 64 00 00 00 	movl   $0x64,(%esp)
      e1a:	e8 7a 09 00 00       	call   1799 <malloc>
      e1f:	89 03                	mov    %eax,(%ebx)
-	memset(PATH[i],0,100);
+	memset(PATH[i],0,100);			//clean allocated memory
      e21:	a1 10 1f 00 00       	mov    0x1f10,%eax
      e26:	8b 54 24 2c          	mov    0x2c(%esp),%edx
      e2a:	c1 e2 02             	shl    $0x2,%edx
@@ -1659,19 +1659,19 @@ main(void)
      e40:	00 
      e41:	89 04 24             	mov    %eax,(%esp)
      e44:	e8 8c 01 00 00       	call   fd5 <memset>
-    if(!strncmp(buf,"export PATH",11)){
+    if(!strncmp(buf,"export PATH",11)){		//if export PATH was called
       //buf = buf+12;
-      PATH = malloc(10*sizeof(char*));
-      memset(PATH, 0, 10*sizeof(char*));
+      PATH = malloc(10*sizeof(char*));		//allocate memory for the PATH variable
+      memset(PATH, 0, 10*sizeof(char*));	//clean alocated memory - 10 paths max
       int i;
       for(i=0;i<10;i++){
      e49:	83 44 24 2c 01       	addl   $0x1,0x2c(%esp)
      e4e:	83 7c 24 2c 09       	cmpl   $0x9,0x2c(%esp)
      e53:	7e af                	jle    e04 <main+0x111>
-	PATH[i] = malloc(100);
-	memset(PATH[i],0,100);
+	PATH[i] = malloc(100);			//allocate memory for each path in PATH - 100 chars max
+	memset(PATH[i],0,100);			//clean allocated memory
       }
-      pathInit = 1;
+      pathInit = 1;				//set flag to 1 - initialized
      e55:	c7 05 14 1f 00 00 01 	movl   $0x1,0x1f14
      e5c:	00 00 00 
       int tempIndex = 0;
@@ -1680,17 +1680,17 @@ main(void)
       int* beginIndex = &tempIndex;
      e67:	8d 44 24 18          	lea    0x18(%esp),%eax
      e6b:	89 44 24 20          	mov    %eax,0x20(%esp)
-      int length = strlen(&(buf[12]));
+      int length = strlen(&(buf[12]));		//set the starting point to parse after "export PATH"
      e6f:	c7 04 24 ac 1e 00 00 	movl   $0x1eac,(%esp)
      e76:	e8 33 01 00 00       	call   fae <strlen>
      e7b:	89 44 24 1c          	mov    %eax,0x1c(%esp)
       char** temp = PATH;
      e7f:	a1 10 1f 00 00       	mov    0x1f10,%eax
      e84:	89 44 24 28          	mov    %eax,0x28(%esp)
-      while(*beginIndex<length-1)
+      while(*beginIndex<length-1)		//go over the command string and tokenize by delimiter
      e88:	eb 2f                	jmp    eb9 <main+0x1c6>
       {
-	if(strtok(*temp,&(buf[12]),':',beginIndex))
+	if(strtok(*temp,&(buf[12]),':',beginIndex)) //if tokenizer returned a string
      e8a:	8b 44 24 28          	mov    0x28(%esp),%eax
      e8e:	8b 00                	mov    (%eax),%eax
      e90:	8b 54 24 20          	mov    0x20(%esp),%edx
@@ -1706,12 +1706,12 @@ main(void)
 	{
 	(temp)++;
      eb4:	83 44 24 28 04       	addl   $0x4,0x28(%esp)
-      pathInit = 1;
+      pathInit = 1;				//set flag to 1 - initialized
       int tempIndex = 0;
       int* beginIndex = &tempIndex;
-      int length = strlen(&(buf[12]));
+      int length = strlen(&(buf[12]));		//set the starting point to parse after "export PATH"
       char** temp = PATH;
-      while(*beginIndex<length-1)
+      while(*beginIndex<length-1)		//go over the command string and tokenize by delimiter
      eb9:	8b 44 24 20          	mov    0x20(%esp),%eax
      ebd:	8b 00                	mov    (%eax),%eax
      ebf:	8b 54 24 1c          	mov    0x1c(%esp),%edx

@@ -409,8 +409,6 @@ FRR:	  t->quanta = QUANTA;			// give the process a quanta for his executing
 	case _GRT:
 GRT:	  if(t->ctime!=currentime)
 	    t->qvalue = t->rtime/(currentime-t->ctime);	// calculate the process queue value according to the ratio given
-	  //if(t->pid>2)
-	    //cprintf("proc id = %d, qvalue = %d\n",t->pid,t->qvalue);  
 	  if(!grt_min)
 	  {
 	    grt_min = t->qvalue;
@@ -505,15 +503,15 @@ yield(void)
   switch(SCHEDFLAG)
   {
     case _FRR:     
-      acquire(&tickslock);
-      proc->qvalue = ticks;
+      acquire(&tickslock);			// after executing a process we'll update his queue value to be ticks so it'll be at the end 
+      proc->qvalue = ticks;			// end of the queue
       release(&tickslock);
       break;
     case _GRT:
       break;
     case _3Q:
-      if(proc->priority == MEDIUM)
-      {
+      if(proc->priority == MEDIUM)		// after executing a process  in the FRR policy we'll update his queue value to be ticks so it'll
+      {						// be at the end of the queue
 	acquire(&tickslock);
 	proc->qvalue = ticks;
 	release(&tickslock);
@@ -673,13 +671,13 @@ nice(void)
 {
   if(proc)
   {
-    if(proc->priority == HIGH)
+    if(proc->priority == HIGH)		// if the process priority was HIGH we'll now set it to MEDIUM
     {
       proc->priority--;
       proc->qvalue = proc->ctime;
       return 0;
     }
-    else if(proc->priority == MEDIUM)
+    else if(proc->priority == MEDIUM)	// if the process priority was MEDIUM we'll now set it to LOW
     {
       proc->priority--;
       return 0;

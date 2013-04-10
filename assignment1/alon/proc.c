@@ -408,9 +408,7 @@ FRR:	  t->quanta = QUANTA;			// give the process a quanta for his executing
 	  break;
 	case _GRT:
 GRT:	  if(t->ctime!=currentime)
-	    t->qvalue = t->rtime/(currentime-t->ctime);	// calculate the process queue value according to the ratio given
-	  //if(t->pid>2)
-	    //cprintf("proc id = %d, qvalue = %d\n",t->pid,t->qvalue);  
+	    t->qvalue = t->rtime/(currentime-t->ctime);		// calculate the process queue value according to the ratio given
 	  if(!grt_min)
 	  {
 	    grt_min = t->qvalue;

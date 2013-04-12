@@ -86,6 +86,7 @@ bootblock: bootasm.S bootmain.c
 	$(LD) $(LDFLAGS) -N -e start -Ttext 0x7C00 -o bootblock.o bootasm.o bootmain.o
 	$(OBJDUMP) -S bootblock.o > bootblock.asm
 	$(OBJCOPY) -S -O binary -j .text bootblock.o bootblock
+	chmod +x ./sign.pl
 	./sign.pl bootblock
 
 entryother: entryother.S
@@ -226,7 +227,7 @@ qemu-nox-gdb: fs.img xv6.img .gdbinit
 # check in that version.
 
 EXTRA=\
-	mkfs.c ulib.c user.h waittest.c RRsanity.c Gsanity.c sanity.c string.c cat.c echo.c forktest.c grep.c kill.c\
+	mkfs.c ulib.c user.h waittest.c RRsanity.c Gsanity.c sanity.c cat.c echo.c forktest.c grep.c kill.c\
 	ln.c ls.c mkdir.c rm.c stressfs.c usertests.c wc.c zombie.c\
 	printf.c umalloc.c\
 	README dot-bochsrc *.pl toc.* runoff runoff1 runoff.list\

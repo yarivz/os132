@@ -674,7 +674,9 @@ nice(void)
     if(proc->priority == HIGH)		// if the process priority was HIGH we'll now set it to MEDIUM
     {
       proc->priority--;
-      proc->qvalue = proc->ctime;
+      acquire(&tickslock);
+      proc->qvalue = ticks;
+      release(&tickslock);
       return 0;
     }
     else if(proc->priority == MEDIUM)	// if the process priority was MEDIUM we'll now set it to LOW

@@ -408,7 +408,7 @@ FRR:	  t->quanta = QUANTA;			// give the process a quanta for his executing
 	  break;
 	case _GRT:
 GRT:	  if(t->ctime!=currentime)
-	    t->qvalue = t->rtime/(currentime-t->ctime);	// calculate the process queue value according to the ratio given
+	    t->qvalue = t->rtime/(currentime-t->ctime);		// calculate the process queue value according to the ratio given
 	  if(!grt_min)
 	  {
 	    grt_min = t->qvalue;
@@ -674,7 +674,9 @@ nice(void)
     if(proc->priority == HIGH)		// if the process priority was HIGH we'll now set it to MEDIUM
     {
       proc->priority--;
-      proc->qvalue = proc->ctime;
+      acquire(&tickslock);
+      proc->qvalue = ticks;
+      release(&tickslock);
       return 0;
     }
     else if(proc->priority == MEDIUM)	// if the process priority was MEDIUM we'll now set it to LOW

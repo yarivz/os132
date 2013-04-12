@@ -155,12 +155,14 @@ strncmp(const char *p, const char *q, uint n)
 }
 
 void
-strcat(char *dest, const char *p, const char *q)
-{
+strcat(char *dest, char *p, char *q)
+{  
   while(*p){
     *dest++ = *p++;
   }
+
   while(*q){
     *dest++ = *q++;
-  }  
+  }
+  *dest = 0;
 }

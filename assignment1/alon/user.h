@@ -26,7 +26,7 @@ int sleep(int);
 int uptime(void);
 
 // ulib.c
-void strcat(char *dest, const char *p, const char *q);
+void strcat(char *dest, char *p, char *q);
 int strtok(char *dest,const char*,const char,int*);
 int strncmp(const char *p, const char *q, uint n);
 char* strncpy(char *s, const char *t, int n);

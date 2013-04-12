@@ -425,6 +425,7 @@ runcmd(struct cmd *cmd)
 	int z = strlen(*temp2);
 	char *a = temp2[i];
 	char dest[x+z];
+	memset(dest,0,sizeof(dest));
 	strcat(dest,a,b);		//concatenate path before the command
 	exec(dest,ecmd->argv);		//try to execute the command from the selected path
       }
